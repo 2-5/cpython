@@ -131,6 +131,7 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
 
     const void* buffer = NULL;
     int bufferSize = 0;
+    PyObject* data;
 
     result = sqlite3_step(state->getStmt);
     if (result == SQLITE_ROW) {
@@ -145,11 +146,17 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
 
         bufferSize = sqlite3_column_bytes(state->getStmt, 0);
 
+        data = PyBytes_FromStringAndSize(buffer, bufferSize);
+        if (data == NULL) {
+            return NULL;
+        }
+
         result = sqlite3_step(state->getStmt);
 
         fprintf(stdout, "*** _sqlitepyc.get: %s [%d bytes]\n", path, bufferSize);
     }
     else {
+        data = Py_NewRef(Py_None);
         fprintf(stdout, "*** _sqlitepyc.get: %s [NOT FOUND]\n", path);
     }
 
@@ -158,17 +165,8 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
         fprintf(stderr, "*** sqlite3_step FAILED: [%d] %s\n", result, sqlite3_errstr(result));
 
         PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        Py_DECREF(data);
         return NULL;
-    }
-
-    PyObject* data;
-    if (buffer != NULL) {
-        data = PyBytes_FromStringAndSize(buffer, bufferSize);
-        if (data == NULL) {
-            return NULL;
-        }
-    } else {
-        data = Py_NewRef(Py_None);
     }
 
     // !!! reset statement to release blob buffers
@@ -178,6 +176,7 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
         fprintf(stderr, "*** sqlite3_reset FAILED: [%d] %s\n", result, sqlite3_errstr(result));
 
         PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        Py_DECREF(data);
         return NULL;
     }
 
