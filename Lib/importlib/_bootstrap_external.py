@@ -1815,7 +1815,7 @@ def _install(_bootstrap_module):
     sys.meta_path.append(PathFinder)
 
 def _sqlite_cache_init():
-    filename = f'__pycache__.{sys.implementation.cache_tag}.sqlite'
+    filename = f'{sys.implementation.cache_tag}.sqlite'
     path = _path_join(sys.prefix, filename)
     _sqlitepyc.init(path)
 
