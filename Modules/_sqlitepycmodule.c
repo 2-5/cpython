@@ -5,8 +5,22 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
+#include "sqlite3.h"
+
+
+static const char* PRAGMA_SQL =
+    "PRAGMA page_size=16384;"
+    "PRAGMA journal_mode=WAL;"
+    "PRAGMA user_version=1;";
+
+static const char* SCHEMA_SQL =
+    "CREATE TABLE IF NOT EXISTS pyc ("
+    "path TEXT PRIMARY KEY, "
+    "data BLOB NOT NULL) "
+    "STRICT";
+
 typedef struct _sqlitepyc_state {
-    void* db;
+    sqlite3* db;
 } _sqlitepyc_state;
 
 static inline _sqlitepyc_state*
@@ -18,12 +32,44 @@ get_sqlitepyc_state(PyObject* module)
 static PyObject*
 _sqlitepyc_init(PyObject* module, PyObject* args)
 {
+    _sqlitepyc_state* state = get_sqlitepyc_state(module);
+
     const char* path;
 
     if (!PyArg_ParseTuple(args, "s", &path))
         return NULL;
 
     fprintf(stdout, "*** _sqlitepyc.init: %s\n", path);
+
+    int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX;
+
+    // !!! Windows: The encoding used for the path argument must be UTF-8
+    int result = sqlite3_open_v2(path, &state->db, flags, NULL);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_open_v2 FAILED: %s\n", sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
+    result = sqlite3_exec(state->db, PRAGMA_SQL, NULL, NULL, NULL);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_exec FAILED: %s\n", sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
+    result = sqlite3_exec(state->db, SCHEMA_SQL, NULL, NULL, NULL);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_exec FAILED: %s\n", sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -57,11 +103,30 @@ _sqlitepyc_set(PyObject* module, PyObject* args)
     Py_RETURN_NONE;
 }
 
+static int
+_sqlitepyc_exec(PyObject* module)
+{
+    fprintf(stdout, "*** _sqlitepyc.exec\n");
+
+    int result = sqlite3_initialize();
+    if (result != SQLITE_OK) {
+        PyErr_SetString(PyExc_ImportError, sqlite3_errstr(result));
+        return -1;
+    }
+
+    return 0;
+}
+
 static PyMethodDef _sqlitepyc_methods[] = {
     {"init", _sqlitepyc_init, METH_VARARGS, NULL},
     {"get", _sqlitepyc_get, METH_VARARGS, NULL},
     {"set", _sqlitepyc_set, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL},
+};
+
+static struct PyModuleDef_Slot _sqlitepyc_slots[] = {
+    {Py_mod_exec, _sqlitepyc_exec},
+    {0, NULL},
 };
 
 static void
@@ -71,6 +136,19 @@ _sqlitepyc_free(void* module)
 
     fprintf(stdout, "*** _sqlitepyc.free\n");
 
+    if (state->db != NULL) {
+        int result = sqlite3_close_v2(state->db);
+        if (result != SQLITE_OK) {
+            fprintf(stderr, "*** sqlite3_close_v2 FAILED: %s\n", sqlite3_errstr(result));
+        }
+        state->db = NULL;
+    }
+
+    int result = sqlite3_shutdown();
+    if (result != SQLITE_OK) {
+        fprintf(stderr, "*** sqlite3_shutdown FAILED: %s\n", sqlite3_errstr(result));
+    }
+
     return;
 }
 
@@ -79,6 +157,7 @@ static struct PyModuleDef _sqlitepycmodule = {
     .m_name = "_sqlitepyc",
     .m_size = sizeof(_sqlitepyc_state),
     .m_methods = _sqlitepyc_methods,
+    .m_slots = _sqlitepyc_slots,
     .m_free = _sqlitepyc_free,
 };
 
