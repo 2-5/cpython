@@ -7,7 +7,6 @@
 
 #include "sqlite3.h"
 
-
 static const char* PRAGMA_SQL =
     "PRAGMA page_size=16384;"
     "PRAGMA journal_mode=WAL;"
@@ -19,8 +18,16 @@ static const char* SCHEMA_SQL =
     "data BLOB NOT NULL) "
     "STRICT";
 
+static const char* GET_SQL =
+    "SELECT data FROM pyc WHERE path = ?";
+
+static const char* SET_SQL =
+    "INSERT OR REPLACE INTO pyc (path, data) VALUES (?, ?)";
+
 typedef struct _sqlitepyc_state {
     sqlite3* db;
+    sqlite3_stmt* getStmt;
+    sqlite3_stmt* setStmt;
 } _sqlitepyc_state;
 
 static inline _sqlitepyc_state*
@@ -66,6 +73,26 @@ _sqlitepyc_init(PyObject* module, PyObject* args)
     if (result != SQLITE_OK) {
         state->db = NULL;
         fprintf(stderr, "*** sqlite3_exec FAILED: %s\n", sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
+    unsigned int prepareFlags = SQLITE_PREPARE_PERSISTENT;
+
+    result = sqlite3_prepare_v3(state->db, GET_SQL, -1, prepareFlags, &state->getStmt, NULL);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_prepare_v3 FAILED: %s\n", sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
+    result = sqlite3_prepare_v3(state->db, SET_SQL, -1, prepareFlags, &state->setStmt, NULL);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_prepare_v3 FAILED: %s\n", sqlite3_errstr(result));
 
         PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
         return NULL;
@@ -135,6 +162,22 @@ _sqlitepyc_free(void* module)
     _sqlitepyc_state* state = get_sqlitepyc_state(module);
 
     fprintf(stdout, "*** _sqlitepyc.free\n");
+
+    if (state->getStmt != NULL) {
+        int result = sqlite3_finalize(state->getStmt);
+        if (result != SQLITE_OK) {
+            fprintf(stderr, "*** sqlite3_finalize FAILED: %s\n", sqlite3_errstr(result));
+        }
+        state->getStmt = NULL;
+    };
+
+    if (state->setStmt != NULL) {
+        int result = sqlite3_finalize(state->setStmt);
+        if (result != SQLITE_OK) {
+            fprintf(stderr, "*** sqlite3_finalize FAILED: %s\n", sqlite3_errstr(result));
+        }
+        state->setStmt = NULL;
+    };
 
     if (state->db != NULL) {
         int result = sqlite3_close_v2(state->db);
