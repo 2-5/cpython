@@ -12,11 +12,11 @@ typedef struct _sqlitepyc_state {
 static inline _sqlitepyc_state*
 get_sqlitepyc_state(PyObject* module)
 {
-    return (_sqlitepyc_state*)PyModule_GetState(module);
+    return (_sqlitepyc_state*) PyModule_GetState(module);
 }
 
 static PyObject*
-_sqlitepyc_init(PyObject* self, PyObject* args)
+_sqlitepyc_init(PyObject* module, PyObject* args)
 {
     const char* path;
 
@@ -29,7 +29,7 @@ _sqlitepyc_init(PyObject* self, PyObject* args)
 }
 
 static PyObject*
-_sqlitepyc_get(PyObject* self, PyObject* args)
+_sqlitepyc_get(PyObject* module, PyObject* args)
 {
     const char* path;
 
@@ -42,7 +42,7 @@ _sqlitepyc_get(PyObject* self, PyObject* args)
 }
 
 static PyObject*
-_sqlitepyc_set(PyObject* self, PyObject* args)
+_sqlitepyc_set(PyObject* module, PyObject* args)
 {
     const char* path;
     Py_buffer buffer;
