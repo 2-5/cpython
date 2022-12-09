@@ -233,7 +233,15 @@ _sqlitepyc_set(PyObject* module, PyObject* args)
         return NULL;
     }
 
-    /*
+    result = sqlite3_reset(state->setStmt);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_reset FAILED: [%d] %s\n", result, sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
     result = sqlite3_bind_null(state->setStmt, 1);
     if (result != SQLITE_OK) {
         state->db = NULL;
@@ -251,7 +259,6 @@ _sqlitepyc_set(PyObject* module, PyObject* args)
         PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
         return NULL;
     }
-    */
 
     PyBuffer_Release(&buffer);
 
