@@ -104,6 +104,8 @@ _sqlitepyc_init(PyObject* module, PyObject* args)
 static PyObject*
 _sqlitepyc_get(PyObject* module, PyObject* args)
 {
+    _sqlitepyc_state* state = get_sqlitepyc_state(module);
+
     const char* path;
 
     if (!PyArg_ParseTuple(args, "s", &path))
@@ -111,12 +113,23 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
 
     fprintf(stdout, "*** _sqlitepyc.get: %s\n", path);
 
+    int result = sqlite3_reset(state->getStmt);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_reset FAILED: [%d] %s\n", result, sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
 static PyObject*
 _sqlitepyc_set(PyObject* module, PyObject* args)
 {
+    _sqlitepyc_state* state = get_sqlitepyc_state(module);
+
     const char* path;
     Py_buffer buffer;
 
@@ -124,6 +137,60 @@ _sqlitepyc_set(PyObject* module, PyObject* args)
         return NULL;
 
     fprintf(stdout, "*** _sqlitepyc.set: %s [%lld bytes]\n", path, buffer.len);
+
+    int result = sqlite3_reset(state->setStmt);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_reset FAILED: [%d] %s\n", result, sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
+    result = sqlite3_bind_text(state->setStmt, 1, path, -1, SQLITE_STATIC);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_bind_text FAILED: [%d] %s\n", result, sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
+    result = sqlite3_bind_blob64(state->setStmt, 2, buffer.buf, buffer.len, SQLITE_STATIC);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_bind_blob64 FAILED: [%d] %s\n", result, sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
+    result = sqlite3_step(state->setStmt);
+    if (result != SQLITE_DONE) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_step FAILED: [%d] %s\n", result, sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
+    result = sqlite3_bind_null(state->setStmt, 1);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_bind_null FAILED: [%d] %s\n", result, sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
+
+    result = sqlite3_bind_null(state->setStmt, 2);
+    if (result != SQLITE_OK) {
+        state->db = NULL;
+        fprintf(stderr, "*** sqlite3_bind_null FAILED: [%d] %s\n", result, sqlite3_errstr(result));
+
+        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(result));
+        return NULL;
+    }
 
     PyBuffer_Release(&buffer);
 
