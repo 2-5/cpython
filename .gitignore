@@ -112,6 +112,9 @@ PCbuild/arm64/
 PCbuild/obj/
 PCbuild/win32/
 Tools/unicode/data/
+/*.sqlite
+/*.sqlite-shm
+/*.sqlite-wal
 /autom4te.cache
 /build/
 /builddir/
