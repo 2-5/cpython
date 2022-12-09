@@ -28,6 +28,7 @@ import _io
 import sys
 import _warnings
 import marshal
+import _sqlitepyc
 
 
 _MS_WINDOWS = (sys.platform == 'win32')
@@ -1097,6 +1098,7 @@ class SourceLoader(_LoaderBasics):
                 source_mtime = int(st['mtime'])
                 try:
                     data = self.get_data(bytecode_path)
+                    _sqlitepyc.get(bytecode_path)
                 except OSError:
                     pass
                 else:
@@ -1245,6 +1247,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 return
         try:
             _write_atomic(path, data, _mode)
+            _sqlitepyc.set(path, data)
             _bootstrap._verbose_message('created {!r}', path)
         except OSError as exc:
             # Same as above: just don't write the bytecode.
@@ -1259,6 +1262,7 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
     def get_code(self, fullname):
         path = self.get_filename(fullname)
         data = self.get_data(path)
+        _sqlitepyc.get(path)
         # Call _classify_pyc to do basic validation of the pyc but ignore the
         # result. There's no source to check against.
         exc_details = {
@@ -1809,3 +1813,10 @@ def _install(_bootstrap_module):
     supported_loaders = _get_supported_file_loaders()
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
     sys.meta_path.append(PathFinder)
+
+def _sqlite_cache_init():
+    filename = f'__pycache__.{sys.implementation.cache_tag}.sqlite'
+    path = _path_join(sys.prefix, filename)
+    _sqlitepyc.init(path)
+
+_sqlite_cache_init()
