@@ -101,20 +101,12 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
 
     int rc = sqlite3_reset(state->getStmt);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_reset FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_reset");
     }
 
     rc = sqlite3_bind_text(state->getStmt, 1, path, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_bind_text FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_bind_text");
     }
 
     const void* buffer = NULL;
@@ -146,23 +138,15 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
     }
 
     if (rc != SQLITE_DONE) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_step FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
         Py_DECREF(data);
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_step");
     }
 
-    // !!! reset statement to release blob buffers
+    // reset statement to release blob buffers
     rc = sqlite3_reset(state->setStmt);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_reset FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
         Py_DECREF(data);
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_reset");
     }
 
     return data;
