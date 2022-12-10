@@ -164,65 +164,40 @@ _sqlitepyc_set(PyObject* module, PyObject* args)
 
     int rc = sqlite3_reset(state->setStmt);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_reset FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_reset");
     }
 
     rc = sqlite3_bind_text(state->setStmt, 1, path, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_bind_text FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_bind_text");
     }
 
     rc = sqlite3_bind_blob64(state->setStmt, 2, buffer.buf, buffer.len, SQLITE_STATIC);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_bind_blob64 FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_bind_blob64");
     }
 
     rc = sqlite3_step(state->setStmt);
     if (rc != SQLITE_DONE) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_step FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_step");
     }
 
+    // reset statement so that we can unbind the binded buffers
     rc = sqlite3_reset(state->setStmt);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_reset FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_reset");
     }
 
+    // bind NULL to release binded buffers
     rc = sqlite3_bind_null(state->setStmt, 1);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_bind_null FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_bind_null");
     }
 
+    // bind NULL to release binded buffers
     rc = sqlite3_bind_null(state->setStmt, 2);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_bind_null FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_bind_null");
     }
 
     PyBuffer_Release(&buffer);
