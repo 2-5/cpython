@@ -11,6 +11,7 @@ static const char* PRAGMA_SQL =
     "PRAGMA page_size=16384;"
     "PRAGMA journal_mode=WAL;"
     "PRAGMA wal_autocheckpoint=256;"
+    "PRAGMA mmap_size=268435456;"  // 256 MB
     "PRAGMA user_version=1;";
 
 static const char* SCHEMA_SQL =
