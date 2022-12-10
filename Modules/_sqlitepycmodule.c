@@ -47,8 +47,6 @@ _sqlitepyc_init(PyObject* module, PyObject* args)
     if (!PyArg_ParseTuple(args, "s", &path))
         return NULL;
 
-    fprintf(stdout, "*** _sqlitepyc.init: %s\n", path);
-
     int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX;
 
     // !!! Windows: The encoding used for the path argument must be UTF-8
@@ -153,12 +151,9 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
         }
 
         result = sqlite3_step(state->getStmt);
-
-        fprintf(stdout, "*** _sqlitepyc.get: %s [%d bytes]\n", path, bufferSize);
     }
     else {
         data = Py_NewRef(Py_None);
-        fprintf(stdout, "*** _sqlitepyc.get: %s [NOT FOUND]\n", path);
     }
 
     if (result != SQLITE_DONE) {
@@ -194,8 +189,6 @@ _sqlitepyc_set(PyObject* module, PyObject* args)
 
     if (!PyArg_ParseTuple(args, "sy*", &path, &buffer))
         return NULL;
-
-    fprintf(stdout, "*** _sqlitepyc.set: %s [%lld bytes]\n", path, buffer.len);
 
     int result = sqlite3_reset(state->setStmt);
     if (result != SQLITE_OK) {
@@ -268,8 +261,6 @@ _sqlitepyc_set(PyObject* module, PyObject* args)
 static int
 _sqlitepyc_exec(PyObject* module)
 {
-    fprintf(stdout, "*** _sqlitepyc.exec\n");
-
     int result = sqlite3_initialize();
     if (result != SQLITE_OK) {
         PyErr_SetString(PyExc_ImportError, sqlite3_errstr(result));
@@ -295,8 +286,6 @@ static void
 _sqlitepyc_free(void* module)
 {
     _sqlitepyc_state* state = get_sqlitepyc_state(module);
-
-    fprintf(stdout, "*** _sqlitepyc.free\n");
 
     if (state->getStmt != NULL) {
         int result = sqlite3_finalize(state->getStmt);
