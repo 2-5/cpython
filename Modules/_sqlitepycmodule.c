@@ -70,15 +70,31 @@ _sqlitepyc_init(PyObject* module, PyObject* args)
         return sqlite_exception(rc, "sqlite3_open_v2");
     }
 
-    rc = sqlite3_exec(state->db, PRAGMA_SQL, NULL, NULL, NULL);
-    if (rc != SQLITE_OK) {
-        return sqlite_exception(rc, "sqlite3_exec");
-    }
+    int k = 0;
+    do {
+        rc = sqlite3_exec(state->db, PRAGMA_SQL, NULL, NULL, NULL);
+        if (rc == SQLITE_OK) {
+            break;
+        }
+        if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
+            sqlite3_sleep(5);  // ms
+        } else {
+            return sqlite_exception(rc, "sqlite3_exec");
+        }
+    } while (k++ < 100);
 
-    rc = sqlite3_exec(state->db, SCHEMA_SQL, NULL, NULL, NULL);
-    if (rc != SQLITE_OK) {
-        return sqlite_exception(rc, "sqlite3_exec");
-    }
+    k = 0;
+    do {
+        rc = sqlite3_exec(state->db, SCHEMA_SQL, NULL, NULL, NULL);
+        if (rc == SQLITE_OK) {
+            break;
+        }
+        if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
+            sqlite3_sleep(5);  // ms
+        } else {
+            return sqlite_exception(rc, "sqlite3_exec");
+        }
+    } while (k++ < 100);
 
     unsigned int prepareFlags = SQLITE_PREPARE_PERSISTENT;
 
