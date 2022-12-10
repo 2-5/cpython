@@ -117,7 +117,7 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
     if (rc == SQLITE_ROW) {
         int type = sqlite3_column_type(state->getStmt, 0);
         if (type != SQLITE_BLOB) {
-            PyErr_SetString(PyExc_RuntimeError, "unexpected column type");
+            PyErr_SetString(PyExc_RuntimeError, "sqlite-pyc: unexpected column type");
             return NULL;
         }
 
