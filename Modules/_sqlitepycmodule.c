@@ -65,7 +65,7 @@ _sqlitepyc_init(PyObject* module, PyObject* args)
     // FIXME: unclear if SQLITE_OPEN_FULLMUTEX is required
     int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX;
 
-    // !!! Windows: The encoding used for the path argument must be UTF-8
+    // FIXME: Windows: The encoding used for the path argument must be UTF-8
     int rc = sqlite3_open_v2(path, &state->db, flags, NULL);
     if (rc != SQLITE_OK) {
         return sqlite_exception(rc, "sqlite3_open_v2");
