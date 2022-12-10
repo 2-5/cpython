@@ -204,6 +204,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_dbm _dbmmodule.c -lgdbm_compat -DUSE_GDBM_COMPAT
 #_gdbm _gdbmmodule.c -lgdbm
 #_lzma _lzmamodule.c -llzma
+#_sqlitepyc _sqlitepycmodule.c -lsqlite3
 #_uuid _uuidmodule.c -luuid
 #zlib  zlibmodule.c -lz
 
