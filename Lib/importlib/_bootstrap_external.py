@@ -28,7 +28,10 @@ import _io
 import sys
 import _warnings
 import marshal
-import _sqlitepyc
+
+
+if sys.flags.use_sqlite_pycache:
+    import _sqlitepyc
 
 
 _MS_WINDOWS = (sys.platform == 'win32')
@@ -1779,6 +1782,12 @@ class FileFinder:
         return f'FileFinder({self.path!r})'
 
 
+def _sqlite_pycache_init():
+    filename = f'{sys.implementation.cache_tag}.sqlite'
+    path = _path_join(sys.prefix, filename)
+    _sqlitepyc.init(path)
+
+
 # Import setup ###############################################################
 
 def _fix_up_module(ns, name, pathname, cpathname=None):
@@ -1828,11 +1837,5 @@ def _install(_bootstrap_module):
     supported_loaders = _get_supported_file_loaders()
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
     sys.meta_path.append(PathFinder)
-
-def _sqlite_pycache_init():
-    filename = f'{sys.implementation.cache_tag}.sqlite'
-    path = _path_join(sys.prefix, filename)
-    _sqlitepyc.init(path)
-
-if sys.flags.use_sqlite_pycache:
-    _sqlite_pycache_init()
+    if sys.flags.use_sqlite_pycache:
+        _sqlite_pycache_init()
