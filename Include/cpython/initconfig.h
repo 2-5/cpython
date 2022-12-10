@@ -165,6 +165,7 @@ typedef struct PyConfig {
     int optimization_level;
     int parser_debug;
     int write_bytecode;
+    int use_sqlite_pycache;
     int verbose;
     int quiet;
     int user_site_directory;

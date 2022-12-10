@@ -89,6 +89,7 @@ def collect_sys(info_add):
         'builtin_module_names',
         'byteorder',
         'dont_write_bytecode',
+        'use_sqlite_pycache',
         'executable',
         'flags',
         'float_info',

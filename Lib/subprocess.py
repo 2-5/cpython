@@ -305,6 +305,7 @@ def _args_from_interpreter_flags():
         # 'inspect': 'i',
         # 'interactive': 'i',
         'dont_write_bytecode': 'B',
+        'use_sqlite_pycache': 'f',
         'no_site': 'S',
         'verbose': 'v',
         'bytes_warning': 'b',

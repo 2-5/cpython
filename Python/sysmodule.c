@@ -2724,6 +2724,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"interactive",             "-i"},
     {"optimize",                "-O or -OO"},
     {"dont_write_bytecode",     "-B"},
+    {"use_sqlite_pycache",      "-f"},
     {"no_user_site",            "-s"},
     {"no_site",                 "-S"},
     {"ignore_environment",      "-E"},
@@ -2773,6 +2774,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(config->interactive);
     SetFlag(config->optimization_level);
     SetFlag(!config->write_bytecode);
+    SetFlag(config->use_sqlite_pycache);
     SetFlag(!config->user_site_directory);
     SetFlag(!config->site_import);
     SetFlag(!config->use_environment);

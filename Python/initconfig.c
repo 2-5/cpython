@@ -36,6 +36,7 @@ Options (and corresponding environment variables):\n\
 -b     : issue warnings about str(bytes_instance), str(bytearray_instance)\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
+-f     : write .pyc files to SQLite database; also PYTHONUSESQLITEPYCACHE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
          debug builds); also PYTHONDEBUG=x\n\
@@ -172,6 +173,7 @@ static const char usage_envvars[] =
 "These variables have equivalent command-line parameters (see --help for details):\n"
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
+"PYTHONUSESQLITEPYCACHE  : write .pyc files to SQLite database (-f)\n"
 "PYTHONINSPECT           : inspect interactively after running script (-i)\n"
 "PYTHONNOUSERSITE        : disable user site directory (-s)\n"
 "PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
@@ -665,6 +667,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->optimization_level >= 0);
     assert(config->parser_debug >= 0);
     assert(config->write_bytecode >= 0);
+    assert(config->use_sqlite_pycache >= 0);
     assert(config->verbose >= 0);
     assert(config->quiet >= 0);
     assert(config->user_site_directory >= 0);
@@ -769,6 +772,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->optimization_level = -1;
     config->parser_debug= -1;
     config->write_bytecode = -1;
+    config->use_sqlite_pycache = -1;
     config->verbose = -1;
     config->quiet = -1;
     config->user_site_directory = -1;
@@ -807,6 +811,7 @@ config_init_defaults(PyConfig *config)
     config->optimization_level = 0;
     config->parser_debug= 0;
     config->write_bytecode = 1;
+    config->use_sqlite_pycache = 0;
     config->verbose = 0;
     config->quiet = 0;
     config->user_site_directory = 1;
@@ -993,6 +998,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(optimization_level);
     COPY_ATTR(parser_debug);
     COPY_ATTR(write_bytecode);
+    COPY_ATTR(use_sqlite_pycache);
     COPY_ATTR(verbose);
     COPY_ATTR(quiet);
     COPY_ATTR(user_site_directory);
@@ -1101,6 +1107,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(optimization_level);
     SET_ITEM_INT(parser_debug);
     SET_ITEM_INT(write_bytecode);
+    SET_ITEM_INT(use_sqlite_pycache);
     SET_ITEM_INT(verbose);
     SET_ITEM_INT(quiet);
     SET_ITEM_INT(user_site_directory);
@@ -1377,6 +1384,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(optimization_level);
     GET_UINT(parser_debug);
     GET_UINT(write_bytecode);
+    GET_UINT(use_sqlite_pycache);
     GET_UINT(verbose);
     GET_UINT(quiet);
     GET_UINT(user_site_directory);
@@ -1644,6 +1652,7 @@ config_read_env_vars(PyConfig *config)
     _Py_get_env_flag(use_env, &config->verbose, "PYTHONVERBOSE");
     _Py_get_env_flag(use_env, &config->optimization_level, "PYTHONOPTIMIZE");
     _Py_get_env_flag(use_env, &config->inspect, "PYTHONINSPECT");
+    _Py_get_env_flag(use_env, &config->use_sqlite_pycache, "PYTHONUSESQLITEPYCACHE");
 
     int dont_write_bytecode = 0;
     _Py_get_env_flag(use_env, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
@@ -2481,6 +2490,10 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'B':
             config->write_bytecode = 0;
+            break;
+
+        case 'f':
+            config->use_sqlite_pycache = 1;
             break;
 
         case 's':
