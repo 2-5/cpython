@@ -1814,9 +1814,9 @@ def _install(_bootstrap_module):
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
     sys.meta_path.append(PathFinder)
 
-def _sqlite_cache_init():
+def _sqlite_pycache_init():
     filename = f'{sys.implementation.cache_tag}.sqlite'
     path = _path_join(sys.prefix, filename)
     _sqlitepyc.init(path)
 
-_sqlite_cache_init()
+_sqlite_pycache_init()
