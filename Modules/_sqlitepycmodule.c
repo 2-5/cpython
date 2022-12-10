@@ -40,6 +40,13 @@ get_sqlitepyc_state(PyObject* module)
 }
 
 static PyObject*
+sqlite_exception(int rc, const char* func) {
+    const char* msg = sqlite3_errstr(rc);
+    PyErr_Format(PyExc_RuntimeError, "sqlite-pyc: %s [%d] %s", func, rc, msg);
+    return NULL;
+}
+
+static PyObject*
 _sqlitepyc_init(PyObject* module, PyObject* args)
 {
     _sqlitepyc_state* state = get_sqlitepyc_state(module);
