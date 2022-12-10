@@ -122,9 +122,8 @@ _sqlitepyc_get(PyObject* module, PyObject* args)
         }
 
         buffer = sqlite3_column_blob(state->getStmt, 0);
-        assert(buffer != NULL);
-
         bufferSize = sqlite3_column_bytes(state->getStmt, 0);
+        assert(buffer != NULL);
 
         data = PyBytes_FromStringAndSize(buffer, bufferSize);
         if (data == NULL) {
