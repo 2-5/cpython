@@ -263,6 +263,12 @@ _sqlitepyc_set(PyObject* module, PyObject* args)
 static int
 _sqlitepyc_exec(PyObject* module)
 {
+    _sqlitepyc_state* state = get_sqlitepyc_state(module);
+
+    state->db = NULL;
+    state->getStmt = NULL;
+    state->setStmt = NULL;
+
     int rc = sqlite3_initialize();
     if (rc != SQLITE_OK) {
         PyErr_SetString(PyExc_ImportError, sqlite3_errstr(rc));
