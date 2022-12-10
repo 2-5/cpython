@@ -1097,8 +1097,12 @@ class SourceLoader(_LoaderBasics):
             else:
                 source_mtime = int(st['mtime'])
                 try:
-                    data = self.get_data(bytecode_path)
-                    _sqlitepyc.get(bytecode_path)
+                    if sys.flags.use_sqlite_pycache:
+                        data = _sqlitepyc.get(bytecode_path)
+                        if data is None:
+                            raise OSError(".pyc not in SQLite cache")
+                    else:
+                        data = self.get_data(bytecode_path)
                 except OSError:
                     pass
                 else:
@@ -1225,6 +1229,14 @@ class SourceFileLoader(FileLoader, SourceLoader):
 
     def set_data(self, path, data, *, _mode=0o666):
         """Write bytes data to a file."""
+        if sys.flags.use_sqlite_pycache:
+            try:
+                _sqlitepyc.set(path, data)
+                _bootstrap._verbose_message('created {!r}', path)
+            except Exception as exc:
+                _bootstrap._verbose_message('could not create {!r}: {!r}', path,
+                                            exc)
+            return
         parent, filename = _path_split(path)
         path_parts = []
         # Figure out what directories are missing.
@@ -1247,7 +1259,6 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 return
         try:
             _write_atomic(path, data, _mode)
-            _sqlitepyc.set(path, data)
             _bootstrap._verbose_message('created {!r}', path)
         except OSError as exc:
             # Same as above: just don't write the bytecode.
@@ -1261,8 +1272,12 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
 
     def get_code(self, fullname):
         path = self.get_filename(fullname)
-        data = self.get_data(path)
-        _sqlitepyc.get(path)
+        if sys.flags.use_sqlite_pycache:
+            data = _sqlitepyc.get(path)
+            if data is None:
+                raise OSError(".pyc not in SQLite cache")
+        else:
+            data = self.get_data(path)
         # Call _classify_pyc to do basic validation of the pyc but ignore the
         # result. There's no source to check against.
         exc_details = {
@@ -1819,4 +1834,5 @@ def _sqlite_pycache_init():
     path = _path_join(sys.prefix, filename)
     _sqlitepyc.init(path)
 
-_sqlite_pycache_init()
+if sys.flags.use_sqlite_pycache:
+    _sqlite_pycache_init()
