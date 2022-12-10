@@ -7329,6 +7329,10 @@ PY_STDLIB_MOD([_sqlite3],
   [test "$have_sqlite3" = "yes"],
   [test "$have_supported_sqlite3" = "yes"],
   [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
+PY_STDLIB_MOD([_sqlitepyc],
+  [test "$have_sqlite3" = "yes"],
+  [test "$have_supported_sqlite3" = "yes"],
+  [$LIBSQLITE3_CFLAGS], [$LIBSQLITE3_LIBS])
 PY_STDLIB_MOD([_tkinter],
   [], [test "$have_tcltk" = "yes"],
   [$TCLTK_CFLAGS], [$TCLTK_LIBS])
