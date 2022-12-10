@@ -32,6 +32,7 @@ import marshal
 
 if sys.flags.use_sqlite_pycache:
     import _sqlitepyc
+    _pyc_suffix = f'.{sys.implementation.cache_tag}.pyc'
 
 
 _MS_WINDOWS = (sys.platform == 'win32')
@@ -800,6 +801,11 @@ def _sqlite_pycache_init():
     _sqlitepyc.init(path)
 
 
+def _sqlite_pycache_path(path):
+    # remove '.tag.pyc' suffix and reverse
+    return path.removesuffix(_pyc_suffix)[::-1]
+
+
 # Module specifications #######################################################
 
 _POPULATE = object()
@@ -1107,7 +1113,7 @@ class SourceLoader(_LoaderBasics):
                 source_mtime = int(st['mtime'])
                 try:
                     if sys.flags.use_sqlite_pycache:
-                        data = _sqlitepyc.get(bytecode_path)
+                        data = _sqlitepyc.get(_sqlite_pycache_path(bytecode_path))
                         if data is None:
                             raise OSError(".pyc not in SQLite cache")
                     else:
@@ -1240,7 +1246,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
         """Write bytes data to a file."""
         if sys.flags.use_sqlite_pycache:
             try:
-                _sqlitepyc.set(path, data)
+                _sqlitepyc.set(_sqlite_pycache_path(path), data)
                 _bootstrap._verbose_message('created {!r}', path)
             except Exception as exc:
                 _bootstrap._verbose_message('could not create {!r}: {!r}', path,
@@ -1282,7 +1288,7 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
     def get_code(self, fullname):
         path = self.get_filename(fullname)
         if sys.flags.use_sqlite_pycache:
-            data = _sqlitepyc.get(path)
+            data = _sqlitepyc.get(_sqlite_pycache_path(path))
             if data is None:
                 raise OSError(".pyc not in SQLite cache")
         else:
