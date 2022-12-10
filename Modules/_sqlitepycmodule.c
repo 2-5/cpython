@@ -61,49 +61,29 @@ _sqlitepyc_init(PyObject* module, PyObject* args)
     // !!! Windows: The encoding used for the path argument must be UTF-8
     int rc = sqlite3_open_v2(path, &state->db, flags, NULL);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_open_v2 FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_open_v2");
     }
 
     rc = sqlite3_exec(state->db, PRAGMA_SQL, NULL, NULL, NULL);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_exec FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_exec");
     }
 
     rc = sqlite3_exec(state->db, SCHEMA_SQL, NULL, NULL, NULL);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_exec FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_exec");
     }
 
     unsigned int prepareFlags = SQLITE_PREPARE_PERSISTENT;
 
     rc = sqlite3_prepare_v3(state->db, GET_SQL, -1, prepareFlags, &state->getStmt, NULL);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_prepare_v3 FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_prepare_v3");
     }
 
     rc = sqlite3_prepare_v3(state->db, SET_SQL, -1, prepareFlags, &state->setStmt, NULL);
     if (rc != SQLITE_OK) {
-        state->db = NULL;
-        fprintf(stderr, "*** sqlite3_prepare_v3 FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
-
-        PyErr_SetString(PyExc_RuntimeError, sqlite3_errstr(rc));
-        return NULL;
+        return sqlite_exception(rc, "sqlite3_prepare_v3");
     }
 
     Py_RETURN_NONE;
