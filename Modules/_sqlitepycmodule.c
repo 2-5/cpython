@@ -222,7 +222,7 @@ _sqlitepyc_exec(PyObject* module)
 
     int rc = sqlite3_initialize();
     if (rc != SQLITE_OK) {
-        PyErr_SetString(PyExc_ImportError, sqlite3_errstr(rc));
+        sqlite_exception(rc, "sqlite3_initialize");
         return -1;
     }
 
@@ -249,7 +249,7 @@ _sqlitepyc_free(void* module)
     if (state->getStmt != NULL) {
         int rc = sqlite3_finalize(state->getStmt);
         if (rc != SQLITE_OK) {
-            fprintf(stderr, "*** sqlite3_finalize FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
+            sqlite_stderr(rc, "sqlite3_finalize");
         }
         state->getStmt = NULL;
     };
@@ -257,7 +257,7 @@ _sqlitepyc_free(void* module)
     if (state->setStmt != NULL) {
         int rc = sqlite3_finalize(state->setStmt);
         if (rc != SQLITE_OK) {
-            fprintf(stderr, "*** sqlite3_finalize FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
+            sqlite_stderr(rc, "sqlite3_finalize");
         }
         state->setStmt = NULL;
     };
@@ -265,14 +265,14 @@ _sqlitepyc_free(void* module)
     if (state->db != NULL) {
         int rc = sqlite3_close_v2(state->db);
         if (rc != SQLITE_OK) {
-            fprintf(stderr, "*** sqlite3_close_v2 FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
+            sqlite_stderr(rc, "sqlite3_close_v2");
         }
         state->db = NULL;
     }
 
     int rc = sqlite3_shutdown();
     if (rc != SQLITE_OK) {
-        fprintf(stderr, "*** sqlite3_shutdown FAILED: [%d] %s\n", rc, sqlite3_errstr(rc));
+        sqlite_stderr(rc, "sqlite3_shutdown");
     }
 
     return;
