@@ -794,6 +794,12 @@ def decode_source(source_bytes):
     return newline_decoder.decode(source_bytes.decode(encoding[0]))
 
 
+def _sqlite_pycache_init():
+    filename = f'{sys.implementation.cache_tag}.sqlite'
+    path = _path_join(sys.prefix, filename)
+    _sqlitepyc.init(path)
+
+
 # Module specifications #######################################################
 
 _POPULATE = object()
@@ -1780,12 +1786,6 @@ class FileFinder:
 
     def __repr__(self):
         return f'FileFinder({self.path!r})'
-
-
-def _sqlite_pycache_init():
-    filename = f'{sys.implementation.cache_tag}.sqlite'
-    path = _path_join(sys.prefix, filename)
-    _sqlitepyc.init(path)
 
 
 # Import setup ###############################################################
