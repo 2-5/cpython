@@ -245,7 +245,7 @@ _sqlitepyc_exec(PyObject* module)
     return 0;
 }
 
-static PyMethodDef _sqlitepyc_methods[] = {
+static struct PyMethodDef _sqlitepyc_methods[] = {
     {"init", _sqlitepyc_init, METH_VARARGS, NULL},
     {"get", _sqlitepyc_get, METH_VARARGS, NULL},
     {"set", _sqlitepyc_set, METH_VARARGS, NULL},
